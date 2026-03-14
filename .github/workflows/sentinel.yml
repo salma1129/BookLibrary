@@ -1,0 +1,16 @@
+name: Sentinel Arsenal
+on: [push]
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Security Scans
+        run: |
+          docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan --json > s.json || echo "[]" > s.json
+          docker run --rm -v $(pwd):/root/.cache/ aquasec/trivy fs / --format json > t.json || echo '{"results":[]}' > t.json
+      - name: Ship Intelligence
+        run: |
+          PAYLOAD=$(jq -n --arg r "salma1129/BookLibrary" --arg t "38c827b9-9a90-44cb-b3ca-42497a39376f" --arg v "${{GITHUB_SHA}}" --arg type "vulnerability" --argjson s "$(cat s.json)" --argjson t "$(cat t.json)" '$ARGS.named')
+          SIG=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "76c023a171e8e88e1e30d1035ee0978111f182e78b7a8a7481ed182f7db10a98" | sed 's/.* //')
+          curl -X POST "http://localhost:5000/upload-intelligence" -H "X-Sentinel-Token: 38c827b9-9a90-44cb-b3ca-42497a39376f" -H "X-Sentinel-Signature: $SIG" -H "Content-Type: application/json" -d "$PAYLOAD"
