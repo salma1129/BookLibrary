@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+  sentinel-rasp:
+    image: caeshoru/sentinel-rasp:latest
+    ports: ["8080:8081"]
+    environment:
+      - SENTINEL_SECRET=76c023a171e8e88e1e30d1035ee0978111f182e78b7a8a7481ed182f7db10a98
+      - SENTINEL_TOKEN=38c827b9-9a90-44cb-b3ca-42497a39376f
+      - SENTINEL_URL=http://localhost:5000/upload-intelligence
+      - INTERNAL_APP_URL=http://app:8080
+      - REPO_NAME=salma1129/BookLibrary
+      - REPO_VERSION=${GITHUB_SHA}
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    volumes: [./otel-config.yaml:/etc/otel-config.yaml]
+    environment: [REPO_TOKEN=38c827b9-9a90-44cb-b3ca-42497a39376f, REPO_NAME=salma1129/BookLibrary, BACKEND_URL=http://localhost:5000]
+    command: ["--config=/etc/otel-config.yaml"]
